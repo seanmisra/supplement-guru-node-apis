@@ -37,17 +37,30 @@ async function connectToDB() {
     }
 }
 
+function handleServerError(res, messageString) {
+    res.status(500).send({
+        message: messageString 
+    })
+}
+
+function handleClientError(res, messageString) {
+    res.status(400).send({
+        message: messageString 
+    })
+}
+
 app.get('/api/allSupplements', async (req, res) => {
     const options = {
         sort: { name: 1 },
-        projection: { _id: 0, name: 1, description: 1, tags: 1 }
+        projection: { name: 1, description: 1, tags: 1 }
     };
 
     const cursor = supplementCluster.find({}, options);
 
     if ((await cursor.count()) === 0) {
         console.log('No supplement data found!');
-        res.send({error: 'No supplement data found!'});
+        handleServerError(res, 'Server error retrieving supplement data');
+        return;
     } else {
         const allSupplementData = await cursor.toArray();
         res.send(allSupplementData);
@@ -63,7 +76,7 @@ app.get('/api/allKeywords', async (req, res) => {
 
     if ((await cursor.count()) === 0) {
         console.log('No keyword data found!');
-        res.send({error: 'No keyword data found!'});
+        handleServerError(res, 'Server error retrieving keyword data');
     } else {
         const allKeywordData = await cursor.toArray();
         const allKeywords = [];
@@ -75,4 +88,29 @@ app.get('/api/allKeywords', async (req, res) => {
 
         res.send(allKeywordsFilteredSorted);
     }
+});
+
+app.post('/api/addSupp', async(req, res) => {
+    const { name } = req.body;
+    const { tags } = req.body;
+    const { description } = req.body; 
+
+    if (!name || !tags || tags.length === 0) {
+        handleClientError(res, 'Invalid data when adding supplement. Name and tag fields are required, with at least one tag')
+        return;
+    }
+
+    const recordToInsert = {
+        name: name,
+        description: description,
+        tags: tags
+    }
+
+    supplementCluster.insertOne(recordToInsert, (error, response) => {
+        if (error) {
+            handleServerError(res, error.message);
+        } else {
+            res.send(recordToInsert);
+        }
+    });
 });
