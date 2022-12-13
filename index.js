@@ -49,6 +49,7 @@ function handleClientError(res, messageString) {
     })
 }
 
+// get all supplements, all fields including the auto-generated id
 app.get('/api/allSupplements', async (req, res) => {
     const options = {
         sort: { name: 1 },
@@ -67,6 +68,7 @@ app.get('/api/allSupplements', async (req, res) => {
     }
 })
 
+// get all keywords (i.e. tags) of all supplements in the DB, sorted, non-duplicates
 app.get('/api/allKeywords', async (req, res) => {
     const options = {
         projection: { _id: 0, tags: 1}
@@ -90,7 +92,8 @@ app.get('/api/allKeywords', async (req, res) => {
     }
 });
 
-app.post('/api/addSupp', async(req, res) => {
+// add one supplement; name and tags are required in req body 
+app.post('/api/supplement', async(req, res) => {
     const { name } = req.body;
     const { tags } = req.body;
     const { description } = req.body; 
@@ -111,6 +114,53 @@ app.post('/api/addSupp', async(req, res) => {
             handleServerError(res, error.message);
         } else {
             res.send(recordToInsert);
+        }
+    });
+});
+
+// update one supplement; all fields will be updated
+app.put('/api/supplement', async(req, res) => {
+    const { name } = req.body;
+    const { tags } = req.body;
+    const { description } = req.body; 
+
+    const filter = {
+        name: name
+    }
+
+    const recordToUpdate = {
+        name: name,
+        description: description,
+        tags: tags
+    }
+
+    supplementCluster.updateOne(filter, {$set: recordToUpdate}, (error, response) => {
+        if (error) {
+            handleServerError(res, error.message);
+        } else {
+            res.send(recordToUpdate);
+        }
+    })
+});
+
+// delete one supplement by name (only one field in the req object -- name -- is required)
+app.delete('/api/supplement', async(req, res) => {
+    const { name } = req.body;
+
+    const filter = {
+        name: name
+    }
+
+    supplementCluster.deleteOne(filter, (error, response) => {
+        if (error) {
+            handleServerError(res, error.message);
+        } else {
+            const records = response.deletedCount;
+            if (records === 0) {
+                res.send('Record does not exist, so was not deleted: ' + name);
+            } else {
+                res.send('Successfully deleted record: ' + name);
+            }
         }
     });
 });
