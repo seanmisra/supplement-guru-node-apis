@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 require('dotenv').config();
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 const PORT = process.env.PORT || 8080;
 let supplementCluster = null;
 
@@ -144,12 +144,14 @@ app.put('/api/supplement', async(req, res) => {
 });
 
 // delete one supplement by name (only one field in the req object -- name -- is required)
-app.delete('/api/supplement', async(req, res) => {
-    const { name } = req.body;
+app.delete('/api/supplement/:id', async(req, res) => {
+    const { id } = req.params;
 
     const filter = {
-        name: name
+        _id: ObjectId(id)
     }
+
+    console.log('id', id)
 
     supplementCluster.deleteOne(filter, (error, response) => {
         if (error) {
@@ -157,9 +159,9 @@ app.delete('/api/supplement', async(req, res) => {
         } else {
             const records = response.deletedCount;
             if (records === 0) {
-                res.send('Record does not exist, so was not deleted: ' + name);
+                res.send('Record does not exist, so was not deleted: ' + id);
             } else {
-                res.send('Successfully deleted record: ' + name);
+                res.send('Successfully deleted record: ' + id);
             }
         }
     });
