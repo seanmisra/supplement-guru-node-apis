@@ -43,16 +43,36 @@ app.get('/api/allSupplements', async (req, res) => {
         projection: { _id: 0, name: 1, description: 1, tags: 1 }
     };
 
-    console.log('supplementCluster');
-    console.log(supplementCluster);
-
     const cursor = supplementCluster.find({}, options);
 
     if ((await cursor.count()) === 0) {
         console.log('No supplement data found!');
         res.send({error: 'No supplement data found!'});
     } else {
-        allSupplementData = await cursor.toArray();
+        const allSupplementData = await cursor.toArray();
         res.send(allSupplementData);
     }
 })
+
+app.get('/api/allKeywords', async (req, res) => {
+    const options = {
+        projection: { _id: 0, tags: 1}
+    }
+
+    const cursor = supplementCluster.find({}, options);
+
+    if ((await cursor.count()) === 0) {
+        console.log('No keyword data found!');
+        res.send({error: 'No keyword data found!'});
+    } else {
+        const allKeywordData = await cursor.toArray();
+        const allKeywords = [];
+        allKeywordData.forEach(keywordObj => {
+            allKeywords.push(...keywordObj.tags);
+        });
+
+        const allKeywordsFilteredSorted = [...new Set(allKeywords)].sort();  
+
+        res.send(allKeywordsFilteredSorted);
+    }
+});
