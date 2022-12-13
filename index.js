@@ -86,7 +86,9 @@ app.get('/api/allKeywords', async (req, res) => {
             allKeywords.push(...keywordObj.tags);
         });
 
-        const allKeywordsFilteredSorted = [...new Set(allKeywords)].sort();  
+        const allKeywordsFilteredSorted = [...new Set(allKeywords)].sort((a, b) => {
+            return a.localeCompare(b, undefined, {sensitivity: 'base'});
+        });
 
         res.send(allKeywordsFilteredSorted);
     }
